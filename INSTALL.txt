@@ -1,0 +1,16 @@
+## Ubuntu 14.04 
+
+sudo apt-get install
+
+## Mac
+
+## Windows
+
+## Virtual box
+
+* Install Oracle Virtual box https://www.virtualbox.org/wiki/Downloads
+* Download Virtual machine <TODO:URL>
+* Start Virtual Machine
+* Login username: pgmstudent, password: course598-004
+* The opengm repository is checked out at /home/pgmstudent/wrk/opengm
+* The example directory is here /home/pgmstudent/wrk/eecs598-004/opengmdemo
