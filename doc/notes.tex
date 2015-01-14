@@ -13,6 +13,9 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{amsfonts}
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}
+
 \title{OpenGM Demo}
 \author{Vikas Dhiman}
 \begin{document}
@@ -20,8 +23,8 @@
 \section{Installation}
 Please follow \href{http://www.andres.sc/publications/opengm-2.0.2-beta-manual.pdf}{OpenGM manual} for installation.
 
-If you are facing problems OpenGM installation, we have a virtual machine setup
-which I'll post on piazza. 
+If you are facing problems OpenGM installation, we have an Ubuntu virtual
+machine setup whose torrent is available in this repository.
 
 \section{Introduction}
 Using probablistic graphical models consists of two main steps. 
@@ -30,19 +33,12 @@ Using probablistic graphical models consists of two main steps.
   \item Inference
 \end{enumerate}
 
-However, when we are using a standard library like OpenGM, we have few more steps that need to be considered.
+However, when we are using a standard library like OpenGM, we have one more
+steps that need to be considered.
 \begin{enumerate}
   \item Modeling
-  \begin{enumerate}
-    \item Adapting the model to OpenGM compatible format
-    \item Coding the model
-  \end{enumerate}
+  \item Adapting the model to OpenGM compatible format
   \item Inference
-    \begin{enumerate}
-      \item Identifying the problem to OpenGM compatible format
-      \item Coding and running the model
-      \item Mapping back the solution from OpenGM to our original problem
-    \end{enumerate}
 \end{enumerate}
 
 OpenGM is vast library with plethora of features. We can't cover all features
@@ -72,7 +68,9 @@ Note that each function depends only on a subset of random variables, for
 example, $P_I(.)$ only depends on $I$, and $P_{G|I,D}(.)$ depends only on
 $G$,$I$ and $D$.
 
-Such a factorization can be represented as something called a \emph{factor graph} (Fig~\ref{fig:fg2}).
+Such a factorization can be represented as something called a \emph{factor
+graph} (Fig~\ref{fig:fg2}). 
+
 \begin{figure}
   \centering
   \includegraphics[height=0.58\textwidth, trim=0 8in 0 0, clip]{media/fg1.jpg}
@@ -81,30 +79,32 @@ Such a factorization can be represented as something called a \emph{factor graph
   \label{fig:fg2}
 \end{figure}
 
-With this example, we are ready for a general definition of \emph{factor
-graph}. 
-
-A \emph{factor graph} is a three-tuple $(V, F, E)$ where $V$ is a set of random
-variables, $F$ is a set of factors and $E$ is a set of undirected edges such
-that $E = \{(X_i, \phi_j) | X_i \in V, \phi_j \in F, \phi_j \text{ depends on } X_i\}$.
-
 \subsection{Coding the graphical model}
 
-Modern CPP programming is a two layered programming, meta-programming (the
-programming executed at compile time) and runtime-programming. 
-
 For easier correspondence to the programmable graphical model we re-write our 
-factorization in terms of $\phi_i$ and $x_i$.
+factorization in more general terms:
 
 \begin{align}
   P(I, D, G, S, L) &= \prod_{i=0}^{4} \phi_i(\{ x_j \}_{j : \phi_i \text{ depends on } X_j})
   \label{eq:factorization}
 \end{align}
 
-\subsubsection{Identifying the monoid}
-Although the meta-programming is Turing complete, and hence we can write our
-entire program in meta-programming, it is standard to use meta-programming to
-deduce the types of various objects used in a CPP program.
+At this point we want to initialize the templated
+\lstinline|opengm::GraphicalModel| class from the library, which requires us to
+identify ValueType, OperationType, FunctionType and SpaceType arguments. We
+will build up the arguments one by one.
+
+\begin{lstlisting}
+  #include <opengm/graphicalmodel/graphicalmodel.hxx>
+  typedef opengm::GraphicalModel<
+          ValueType,
+          OperationType,
+          FunctionType,
+          SpaceType
+            > Model;
+\end{lstlisting}
+
+\subsubsection{Identifying the ValueType and OperationType}
 
 While defining the graphical model, we have to first define the types of its
 components. For this we note that all our factors $\phi_i(.)$ are of the form
@@ -116,22 +116,55 @@ datatypes like \lstinline|float| or \lstinline|double|.
 
 Also note the operator between different factors in equation
 \eqref{eq:factorization}, is multiplication. This operator acts upon the
-codomain of factors $\phi_i$. The corresponding datatype in opengm is \lstinline|opengm::Multiplier|. 
-Although factorization in general usage has meant with respect to multiplication, but in
-abstract mathematics you can always replace one operator with another as long as it satisfies certain
+codomain of factors $\phi_i$. The corresponding datatype in opengm is
+\lstinline|opengm::Multiplier|.  Although factorization in typical usage is
+always with respect to multiplication, but in abstract mathematics you can
+always replace one operator with another as long as it satisfies certain
 axioms. Here, the operator is required to satisfy the axioms of a commutative
-monoid $(\Omega, \otimes, 1)$, where $\Omega$ is the common codomain of the
-factors $\phi_i$, $\otimes$ is the factorization operator and $1$ is the
-identity element of the monoid such that $\forall \omega \in \Omega : \omega
-\otimes 1 = \omega$. 
+monoid.
 
-Note that data types/classes like \lstinline|opengm::Multiplier| and \lstinline|opengm::Adder|
-corresponds to the complete monoid instead of the operator of the monoid.
+\begin{definition}
+  A tuple $(S, \otimes, 1)$ is called commutative monoid if set $S$, binary operation $\otimes$ and identity element $1 \in S$ satisfy following axioms
+  \begin{enumerate}
+    \item Closure: $\forall a, b \in S, a \otimes b \in S$
+    \item Associativity: $(a \otimes b) \otimes  c = a \otimes (b \otimes  c)$
+    \item Identity: $\exists 1 \in S | \forall s \in S, s \otimes 1 = s$
+    \item Commutativity: $a\otimes b = b\otimes a$
+  \end{enumerate}
+\end{definition}
 
-The ability of using any operator in place of multiplication is of practical
-importance, as it enables the use of log domain for computation without
-modifying the graphical model. Log domain avoids numerical problems like
-underflow and overflow.
+We do not need the general definition of commutative monoid, as long as we know
+that addition and multiplication operator satisfy these axioms on real numbers.
+At this point we can define the following properties of factor graph to be
+representable in OpenGM
+
+\begin{definition}
+A \emph{factor graph} representation of a factorization 
+$\phi(V) = \otimes_{j=1}^M \phi_j(v \subseteq V)$ 
+is a three-tuple $(V, F, E)$ where 
+\begin{enumerate}
+   \item $V = \{X_i\}_{i=1}^{N}$ is a set of random variables 
+   \item $F = \{\phi_j\}_{j=1}^{M}$ is a set of functions (or factors)
+   \item $E = \{(X_i, \phi_j) | X_i \in V, \phi_j \in F, \phi_j \text{ depends on } X_i\}$ is a set of underirected edges
+   \item Each factor $\phi_j : L_j \rightarrow S$ has codomain in $S$.
+   \item $S$ forms a commutative monoid with operator $\otimes$.
+\end{enumerate}
+\end{definition}
+
+Programmatically, the \emph{ValueType} is corresponds to $S$. the
+\emph{OperatorType} corresponds to $\otimes$.  In our example, $S$ is set of real numbers, hence ValueType is float or double;
+$\otimes$ is simple multiplication, and OperationType corresponds to
+\lstinline|opengm::Multiplier|.
+
+% Note that data types/classes like \lstinline|opengm::Multiplier| and
+% \lstinline|opengm::Adder| corresponds to the complete monoid instead of the
+% operator of the monoid.
+
+The ability of using addition operator (\lstinline|opengm::Adder|) in place
+of multiplication is of practical importance, as it enables the use of log
+domain for computation without modifying the graphical model. Log domain avoids
+numerical problems like underflow that are common in probablistic graphical models.
+
 
 \begin{align}
   \log P(I, D, G, S, L) &= \sum_{i=0}^{4} \log( \phi_i(\{ x_j \}_{j : \phi_i \text{ depends on } X_j}) )
@@ -143,7 +176,10 @@ underflow and overflow.
 Next step is choosing the data type for representation of factors $\phi_i(.)$.
 If the corresponding function can be tabulated, then the factor can be
 represented as \lstinline|opengm::ExplicitFunction|. Depending upon the structure of 
-factors $\phi_i(.)$ different classes can be used. 
+factors $\phi_i(.)$ different classes can be used. The available classes of
+functions is tabulated in Table 2.1 of the manual.
+
+\includegraphics[width=\textwidth, trim=0 0 0 0, clip]{media/availablefunctions.png}
 
 \begin{align}
   P_{G|I,D}(g, i, d) &= P_{G|I,D}(x_2, x_0, x_1) \\
@@ -155,13 +191,13 @@ From the table of figure 3.4 we can explicitly assign the values for $\phi_2$
 \begin{lstlisting}
   #include <opengm/functions/explicit_function.hxx>
 
-  // Size of value space of each random variable i.e. X2, X0, X1
-  size t shape[] = {3, 2, 2};
-  opengm::ExplicitFunction<double> phi2(shape, shape + 3, 0.0);
-  phi2(0, 0, 0) = 0.3;  phi2(1, 0, 0) = 0.4;  phi2(2, 0, 0) = 0.3;
-  phi2(0, 0, 1) = 0.05; phi2(1, 0, 1) = 0.25; phi2(2, 0, 1) = 0.7;
-  phi2(0, 1, 0) = 0.9;  phi2(1, 1, 0) = 0.08; phi2(2, 1, 0) = 0.02;
-  phi2(0, 1, 1) = 0.5;  phi2(1, 1, 1) = 0.3;  phi2(2, 1, 1) = 0.2;
+  // Size of value space of each random variable i.e. X0, X1, X2
+  size_t shape2[] = {2, 2, 3};
+  opengm::ExplicitFunction<double> phi2(shape2, shape2 + 3, 0.0);
+  phi2(0, 0, 0) = 0.3;  phi2(0, 0, 1) = 0.4;  phi2(0, 0, 2) = 0.3;
+  phi2(1, 0, 0) = 0.05; phi2(1, 0, 1) = 0.25; phi2(1, 0, 2) = 0.7;
+  phi2(0, 1, 0) = 0.9;  phi2(0, 1, 1) = 0.08; phi2(0, 1, 2) = 0.02;
+  phi2(1, 1, 0) = 0.5;  phi2(1, 1, 1) = 0.3;  phi2(1, 1, 2) = 0.2;
 \end{lstlisting}
 
 
@@ -205,8 +241,15 @@ Hence a discrete space can be simply be defined as
 
 \subsubsection{Composing the graph}
 
+Once we have initialized the factors and variables, we need connect the factors
+and variables to complete the graph. At this point we should note a
+difference in terminology. OpenGM distinguishes between a Factor and a
+function.  The distinction arises when we can reuse certain functions. For
+example, if we had $P_{L|G}(\mathbf{x}) = P_{S|I}(\mathbf{x}) \forall
+\mathbf{x}$, then we could have represented both the factors with a same
+function.
+
 \begin{lstlisting}
-  typedef opengm::GraphicalModel<MyValueType, MyOperationType, opengm::ExplicitFunction<MyValueType>, opengm::DiscreteSpace<> > GMType;
   GMType gm(space);
   typedef GMType::FunctionIndentifier GMFunctionIndentifier;
   GMFunctionIndentifier fid0 = gm.addFunction(phi0);
@@ -222,15 +265,94 @@ Hence a discrete space can be simply be defined as
   gm.addFactor(fid4, var4, var4 + 2);
 \end{lstlisting}
 
-Note that we have not differentiated between factor and function in our
-discussion. OpenGM does differentiate between factor and function. The distinction arises
-when we can reuse certain functions. For example, if we had
-$P_{L|G}(\mathbf{x}) = P_{S|I}(\mathbf{x}) \forall \mathbf{x}$, then we could
-have represented both the factors with a same function.
 
-\subsection{Adapting the problem.}
-Suppose we want to find out the probability of Letter being $l^1$ given SAT score is $s^0$. Mathematically, the 
+\subsection{Queries}
+Suppose we want to find out the probability of Letter being $l^1$.
+Mathematically we want to find
 
-\section{Generalization}
+\begin{align}
+  P(L = l^1) = \sum_{D,I,G,S,L=l^1} P(I, D, G, S, L)
+  \label{eq:marginal}
+\end{align}
+
+A similar but different that occurs often in PGMs is that of finding the Letter
+that maximizes the joint probability. This is not exactly, the MAP query but
+similar. Since OpenGM does not distinguishes between posterior or joint
+probability, the difference needs to be handled during the factor graph
+formulation. This method illustrates how you will be setting up inference for
+MAP queries. 
+
+\begin{align}
+  L^* = \arg \max_{L} P(I, D, G, S, L)
+  \label{eq:map}
+\end{align}
+
+This problem is called computing the marginal with respect to $L = l^1$. Not
+all inference algorithms support computation of marginals. Belief propagation
+is a kind of message passing algorithm that does supporting computing of
+marginals. We will initialize Belief Propgation algorithm and compute the
+marginals with following code. The template for setting up of inference
+algorithms, is provided in the OpenGM manual. 
+
+\begin{lstlisting}
+  // Set up inference method
+  typedef opengm::BeliefPropagationUpdateRules<Model, opengm::Integrator>
+    UpdateRules;
+  typedef opengm::MessagePassing<Model, opengm::Integrator, UpdateRules,
+          opengm::MaxDistance> BeliefPropagation;
+\end{lstlisting}
+
+Note the use of \lstinline|opengm::Integrator|. It is because of the summation,
+operator in the marginal problem \eqref{eq:marginal}. If we want to
+solve for the MAP problem \eqref{eq:map}, we use \lstinline|opengm::Maximizer| 
+instead of \lstinline|opengm::Integrator|. The rest of the code for setting up parameters and running inference is standard.
+
+\begin{lstlisting}
+  const size_t maxNumberOfIterations = 100;
+  const double convergenceBound = 1e-7;
+  const double damping = 0.0;
+  BeliefPropagation::Parameter parameter(maxNumberOfIterations,
+      convergenceBound, damping);
+  parameter.useNormalization_ = true;
+
+  // Inference on graphical model
+  BeliefPropagation bp(gm, parameter);
+  bp.infer();
+
+\end{lstlisting}
+
+While accessing the results, we can either ask for optimal labelings or marginal probabilities or both.
+
+\begin{lstlisting}
+
+  // Accessing marginal probabilities
+  Model::IndependentFactorType marg;
+  for(IndexType var=0; var<gm.numberOfVariables(); ++var)
+  {
+    std::cout<< "Variable x_" << var 
+      << " has the following marginal distribution P(x_"<<var<<") :";
+    bp.marginal(var,marg);
+    for(LabelType i=0; i<gm.numberOfLabels(var); ++i)
+      std::cout <<marg(&i) << " ";
+    std::cout<<std::endl;
+  }   
+
+  // Find most likely labeling
+  std::vector<size_t> labeling(gm.numberOfVariables());
+  bp.arg(labeling);
+  std::cout << "Labeling : " << ;
+  for(IndexType var=0; var<gm.numberOfVariables(); ++var)
+    std::cout << labeling[var] << ", ";
+\end{lstlisting}
+
+\section{Unresolved doubts}
+There are a few things about the library that I don't understand. I have
+written to the author for clarification, and hope to find out an answer soon.
+
+\begin{enumerate}
+  \item IndependentFactorType and Factor arithmetic: Why is it important and what kind of problems can factor arithmetic solve?
+  \item How to compute marginal over multiple variables?
+\end{enumerate}
+
 
 \end{document}
