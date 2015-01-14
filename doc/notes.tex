@@ -73,19 +73,46 @@ graph} (Fig~\ref{fig:fg2}).
 
 \begin{figure}
   \centering
-  \includegraphics[height=0.58\textwidth, trim=0 8in 0 0, clip]{media/fg1.jpg}
-  \includegraphics[height=0.58\textwidth, trim=0 15in 0 0, clip]{media/fg2.jpg}
-  \caption{Factor graph representation with numbering}
+  \includegraphics[height=0.58\textwidth, trim=0 0in 0 0, clip]{media/bayes2factorgraph.pdf}
+  %\includegraphics[height=0.58\textwidth, trim=0 15in 0 0, clip]{media/fg2.jpg}
+  \caption{Factor graph representation}
   \label{fig:fg2}
 \end{figure}
 
 \subsection{Coding the graphical model}
 
 For easier correspondence to the programmable graphical model we re-write our 
-factorization in more general terms:
+factorization in more general terms with the renaming of functions given in Table \ref{tab:rename}.
+\begin{table}
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    Old factor name & New name \\
+    \hline
+          $P_D(.)$  & $\phi_0(.)$\\
+          $P_I(.)$  & $\phi_1(.)$\\
+    $P_{G|I,D}(.)$  & $\phi_2(.)$\\
+      $P_{S|I}(.)$  & $\phi_3(.)$\\
+      $P_{L|G}(.)$  & $\phi_4(.)$\\
+    \hline
+  \end{tabular}
+  \begin{tabular}{|l|l|}
+    \hline
+    Old variable name & New name \\
+    \hline
+                  $D$ & $X_0$\\
+                  $I$ & $X_1$\\
+                  $G$ & $X_2$\\
+                  $S$ & $X_3$\\
+                  $L$ & $X_4$ \\
+    \hline
+  \end{tabular}
+  \caption{Renaming factors to a more generic form}
+  \label{tab:rename}
+\end{table}
 
 \begin{align}
-  P(I, D, G, S, L) &= \prod_{i=0}^{4} \phi_i(\{ x_j \}_{j : \phi_i \text{ depends on } X_j})
+  P(I, D, G, S, L) &= \prod_{i=0}^{4} \phi_i(\{ x_j \}_{j : \phi_i(.) \text{ depends on } X_j})
   \label{eq:factorization}
 \end{align}
 
@@ -145,7 +172,7 @@ is a three-tuple $(V, F, E)$ where
 \begin{enumerate}
    \item $V = \{X_i\}_{i=1}^{N}$ is a set of random variables 
    \item $F = \{\phi_j\}_{j=1}^{M}$ is a set of functions (or factors)
-   \item $E = \{(X_i, \phi_j) | X_i \in V, \phi_j \in F, \phi_j \text{ depends on } X_i\}$ is a set of underirected edges
+   \item $E = \{(X_i, \phi_j) | X_i \in V, \phi_j \in F, \phi_j(.) \text{ depends on } X_i\}$ is a set of underirected edges
    \item Each factor $\phi_j : L_j \rightarrow S$ has codomain in $S$.
    \item $S$ forms a commutative monoid with operator $\otimes$.
 \end{enumerate}
@@ -167,7 +194,7 @@ numerical problems like underflow that are common in probablistic graphical mode
 
 
 \begin{align}
-  \log P(I, D, G, S, L) &= \sum_{i=0}^{4} \log( \phi_i(\{ x_j \}_{j : \phi_i \text{ depends on } X_j}) )
+  \log P(I, D, G, S, L) &= \sum_{i=0}^{4} \log( \phi_i(\{ x_j \}_{j : \phi_i(.) \text{ depends on } X_j}) )
   \label{eq:factorization}
 \end{align}
 
