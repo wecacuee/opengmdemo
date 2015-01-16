@@ -310,7 +310,7 @@ formulation. This method illustrates how you will be setting up inference for
 MAP queries. 
 
 \begin{align}
-  L^* = \arg \max_{L} P(I, D, G, S, L)
+  (I^*, D^*, G^*, S^*, L^*)  = \arg \max_{L} P(I, D, G, S, L)
   \label{eq:map}
 \end{align}
 
@@ -379,6 +379,14 @@ written to the author for clarification, and hope to find out an answer soon.
 \begin{enumerate}
   \item IndependentFactorType and Factor arithmetic: Why is it important and what kind of problems can factor arithmetic solve?
   \item How to compute marginal over multiple variables?
+
+    Hi Vikas,
+    in the manual we give the formal definition of this marginals.
+    Our interface only supports first order (pseudo) marginals and (pseudo) marginals over variables that form a factor in the model.
+
+    A workaround (that might be not a good idea) is to add a empty higher order factor to your model. This can become intractable even for small sets.
+
+    Best Joerg
 \end{enumerate}
 
 
