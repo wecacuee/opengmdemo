@@ -21,7 +21,8 @@
 \begin{document}
 \maketitle
 \section{Installation}
-Please follow \href{http://www.andres.sc/publications/opengm-2.0.2-beta-manual.pdf}{OpenGM manual} for installation.
+
+Please follow \href{http://www.andres.sc/publications/opengm-2.0.2-beta-manual.pdf}{OpenGM manual} \cite{andresopengm, andres2012opengm} for installation. This work is mostly derived and reproduced from OpenGM2 manual \cite{andresopengm} for teaching purposes.
 
 If you are facing problems OpenGM installation, we have an Ubuntu virtual
 machine setup whose torrent is available in this repository.
@@ -52,9 +53,12 @@ generalizing (abstraction). This will enable students to have a choice, between 
 Modeling is defining the relationships and assumptions between various elements
 of the problem in a mathematical framework. For this example, we assume that
 the graphical model is given as a Bayes network.  We will consider the Bayesian
-network provided in Figure 3.4 (Page 53) from the text book.
+network provided in Figure 3.4 \cite[p 53]{koller2009probabilistic} from the text book.
 
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{media/examplebayesnet.png}
+\caption{An example graphical model from \cite[p 53]{koller2009probabilistic}}
+\end{figure}
 
 \subsection{Adapting the model}
 We note that the above Bayesian model represents explicit factorization of
@@ -310,7 +314,7 @@ formulation. This method illustrates how you will be setting up inference for
 MAP queries. 
 
 \begin{align}
-  (I^*, D^*, G^*, S^*, L^*)  = \arg \max_{L} P(I, D, G, S, L)
+  (I^*, D^*, G^*, S^*, L^*)  = \arg \max_{I, D, G, S, L} P(I, D, G, S, L)
   \label{eq:map}
 \end{align}
 
@@ -389,5 +393,7 @@ written to the author for clarification, and hope to find out an answer soon.
     Best Joerg
 \end{enumerate}
 
+\bibliographystyle{plain}
+\bibliography{notes}
 
 \end{document}
